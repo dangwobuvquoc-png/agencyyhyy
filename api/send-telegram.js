@@ -1,57 +1,57 @@
-// /api/notify.js
-
+// api/send-telegram.js
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ success: false, error: "Method Not Allowed" });
+  // Chỉ chấp nhận các yêu cầu POST
+  if (req.method !== 'POST') {
+    return res.status(405).send('Method Not Allowed');
   }
 
+  // Lấy dữ liệu từ body của yêu cầu POST
+  const { message } = req.body;
+
+  // Kiểm tra xem 'message' có tồn tại không
+  if (!message) {
+    return res.status(400).send('Message is required');
+  }
+
+  // Lấy token và chat ID từ biến môi trường của Vercel
+  const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+  const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+  const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+
+  // Kiểm tra nếu biến môi trường chưa được thiết lập
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+      console.error('Telegram bot token or chat ID is not set in environment variables.');
+      return res.status(500).json({ error: 'Server configuration error: Telegram credentials missing.' });
+  }
+
+  // Cấu hình tham số cho yêu cầu Telegram API
+  const params = {
+    chat_id: TELEGRAM_CHAT_ID,
+    text: message,
+    parse_mode: 'HTML'
+  };
+
   try {
-    const payload = req.body;
-
-    // --- Cấu hình ---
-    const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-    const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-    const WEBHOOK_URL = "https://your-webhook-endpoint.com/receive"; // thay bằng webhook thật
-
-    // --- Gửi đến Telegram ---
-    const telegramMessage = `
-📢 New Form Submission:
-Name: ${payload.name}
-Email: ${payload.email}
-Message: ${payload.message}
-Time: ${new Date().toISOString()}
-    `;
-
-    const telegramResp = await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_CHAT_ID,
-          text: telegramMessage,
-        }),
-      }
-    );
-
-    // --- Gửi đến Webhook ---
-    const webhookResp = await fetch(WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+    // Gửi yêu cầu đến Telegram API
+    const response = await fetch(TELEGRAM_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params)
     });
+    const data = await response.json();
 
-    // --- Kiểm tra kết quả ---
-    if (!telegramResp.ok) {
-      throw new Error("Telegram send failed");
+    // Xử lý phản hồi từ Telegram
+    if (!data.ok) {
+      console.error('Telegram API error:', data.description);
+      return res.status(500).json({ error: 'Failed to send message to Telegram', details: data.description });
+    } else {
+      console.log('Message sent to Telegram successfully!');
+      return res.status(200).json({ success: true });
     }
-    if (!webhookResp.ok) {
-      throw new Error("Webhook send failed");
-    }
-
-    return res.status(200).json({ success: true });
-  } catch (err) {
-    console.error("Notify error:", err);
-    return res.status(500).json({ success: false, error: err.message });
+  } catch (error) {
+    console.error('Error sending message to Telegram:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 }
