@@ -1,40 +1,41 @@
-// Example Node.js / Serverless Function to send message to Telegram
-const fetch = require('node-fetch'); // Nếu Serverless hỗ trợ fetch, có thể bỏ require
-
-// Thay bằng Token Bot Telegram của bạn
-const TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN_HERE';
-const TELEGRAM_CHAT_ID = 'YOUR_CHAT_ID_HERE';
+// api/send-telegram.js
+import axios from 'axios';
 
 export default async function handler(req, res) {
+    // Chỉ cho phép POST
     if (req.method !== 'POST') {
-        return res.status(405).json({ success: false, error: 'Method not allowed' });
+        return res.status(405).json({ success: false, error: 'Method Not Allowed' });
     }
+
+    const { message } = req.body;
+
+    // Kiểm tra message
+    if (!message) {
+        return res.status(400).json({ success: false, error: 'Message is required' });
+    }
+
+    const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+    const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+
+    // Kiểm tra biến môi trường
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+        console.error('Telegram credentials missing!');
+        return res.status(500).json({ success: false, error: 'Server configuration error: Telegram credentials missing.' });
+    }
+
+    const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
 
     try {
-        const { message } = req.body;
-        if (!message) {
-            return res.status(400).json({ success: false, error: 'Message is required' });
-        }
-
-        const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: TELEGRAM_CHAT_ID,
-                text: message,
-                parse_mode: 'HTML'
-            })
+        const response = await axios.post(TELEGRAM_API_URL, {
+            chat_id: TELEGRAM_CHAT_ID,
+            text: message,
+            parse_mode: 'HTML'
         });
-        const data = await response.json();
 
-        if (!data.ok) {
-            return res.status(500).json({ success: false, error: data.description });
+        if (response.data.ok) {
+            console.log('✅ Message sent successfully!');
+            return res.status(200).json({ success: true });
+        } else {
+            console.error('❌ Telegram API error:', response.data.description);
+            return res.status(500).json({ success: false, error: 'Failed to send message', details: response.data.description });
         }
-
-        res.status(200).json({ success: true });
-    } catch (error) {
-        console.error('Error sending Telegram message:', error);
-        res.status(500).json({ success: false, error: 'Internal Server Error' });
-    }
-}
