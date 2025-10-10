@@ -410,23 +410,26 @@
 
         // Send message to Telegram
         async function sendMessageToTelegram(message) {
-  try {
-    const response = await fetch('/api/notify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message })
-    });
-
-    const data = await response.json();
-
-    if (!data.success) {
-      console.error('❌ Error sending message via notify API:', data.error);
-    } else {
-      console.log('✅ Message sent successfully via notify API!');
+    try {
+        // Gọi đến endpoint của Serverless Function
+        const response = await fetch('/api/send-telegram', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ message: message }) // Gửi nội dung tin nhắn lên Serverless Function
+        });
+        const data = await response.json();
+        if (!data.success) {
+            console.error('Error sending message via API:', data.error);
+            // Xử lý lỗi nếu cần (ví dụ: hiển thị thông báo cho người dùng)
+        } else {
+            console.log('Message sent successfully via API!');
+        }
+    } catch (error) {
+        console.error('Error calling send-telegram API:', error);
+        // Xử lý lỗi kết nối hoặc lỗi mạng
     }
-  } catch (error) {
-    console.error('⚠️ Error calling notify API:', error);
-  }
 }
 
         // --- Form and Popup Handlers ---
@@ -442,7 +445,8 @@
                 personalEmail: document.getElementById('personalEmail').value,
                 mobilePhoneNumber: document.getElementById('mobilePhoneNumber').value,
                 additionalInfo: document.getElementById('additionalInfo').value,
-                            };
+                ticketNumber: ticketNumberSpan.textContent
+            };
 
             // Basic validation
             if (!formData.yourName || !formData.businessEmail || !formData.personalEmail || !formData.mobilePhoneNumber) {
